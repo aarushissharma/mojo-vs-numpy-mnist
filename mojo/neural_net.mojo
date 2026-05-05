@@ -3,17 +3,17 @@ from std.random import random_float64
 from std.sys import simd_width_of
 from std.algorithm import parallelize
 
-def relu_val(x: Float64) -> Float64:
+def relu_val(x: Float32) -> Float32:
     if x > 0:
         return x
     return 0.0
 
-def matmul_parallel(A: List[Float64], B: List[Float64],
-                    m: Int, n: Int, k: Int) -> List[Float64]:
-    var C = List[Float64](capacity=m*k)
+def matmul_parallel(A: List[Float32], B: List[Float32],
+                    m: Int, n: Int, k: Int) -> List[Float32]:
+    var C = List[Float32](capacity=m*k)
     for _ in range(m*k):
         C.append(0.0)
-    comptime simd_width = simd_width_of[DType.float64]()
+    comptime simd_width = simd_width_of[DType.float32]()
     var A_ptr = A.unsafe_ptr()
     var B_ptr = B.unsafe_ptr()
     var C_ptr = C.unsafe_ptr()
@@ -35,22 +35,22 @@ def matmul_parallel(A: List[Float64], B: List[Float64],
     return C^
 
 def main():
-    print("Mojo SIMD + Parallel neural network forward pass benchmark")
+    print("Mojo SIMD + Parallel (Float32) neural network forward pass benchmark")
     var batch_size = 10000
     var input_size = 784
     var hidden_size = 128
     var output_size = 10
-    var X  = List[Float64](capacity=batch_size*input_size)
-    var W1 = List[Float64](capacity=input_size*hidden_size)
-    var W2 = List[Float64](capacity=hidden_size*output_size)
+    var X  = List[Float32](capacity=batch_size*input_size)
+    var W1 = List[Float32](capacity=input_size*hidden_size)
+    var W2 = List[Float32](capacity=hidden_size*output_size)
     for _ in range(batch_size*input_size):
-        X.append(random_float64(0.0, 1.0))
+        X.append(random_float64(0.0, 1.0).cast[DType.float32]())
     for _ in range(input_size*hidden_size):
-        W1.append(random_float64(-0.01, 0.01))
+        W1.append(random_float64(-0.01, 0.01).cast[DType.float32]())
     for _ in range(hidden_size*output_size):
-        W2.append(random_float64(-0.01, 0.01))
+        W2.append(random_float64(-0.01, 0.01).cast[DType.float32]())
     print("Starting benchmark...")
-    var runs = 10
+    var runs = 100
     var start = perf_counter_ns()
     for _ in range(runs):
         var z1 = matmul_parallel(X, W1, batch_size, input_size, hidden_size)
